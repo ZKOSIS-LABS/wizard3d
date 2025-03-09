@@ -228,8 +228,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
         popupDom.classList.add("popup-info");
         popupDom.innerHTML = `
           
-          <p>Introducing HedgeShot, the ultimate sniper bot built on Sonic Chain, an Ethereum Layer 2 solution designed for lightning-fast transactions and precision execution. Whether you're hunting for early entries or securing the best exits, this bot ensures seamless, gas-efficient performance on the Sonic Chain network.</p>
-          <img src="/textlogo.png" alt="Info Image" style="width:40%; margin:auto;  height:auto;">
+        <p>Backed by a community-driven vision, WZD thrives on memes, engagement, and a sprinkle of blockchain sorcery. Whether you're a crypto veteran or a new sorcerer entering the space, Wizard is designed to be fun, fast, and accessible, thanks to Solana’s high-speed, low-fee transactions. <br> CA : 111111111111111111111</p>
         `;
       } else if (title === "CHART") {
         popupDom.classList.add("popup-chart");
