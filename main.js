@@ -80,7 +80,7 @@ renderer.domElement.addEventListener("touchmove", (event) => {
 // ----- 3D Model Loading -----
 const loader = new GLTFLoader();
 loader.load(
-  "/assets/wizard.glb",
+  "/assets/wizo.glb",
   (gltf) => {
     const model = gltf.scene;
     scene.add(model);
@@ -91,7 +91,7 @@ loader.load(
     model.scale.set(scaleFactor, scaleFactor, scaleFactor);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
-    model.position.y -= 1.2;
+    model.position.y -= 0.6;
     console.log("Model Loaded and Resized!");
   },
   undefined,
