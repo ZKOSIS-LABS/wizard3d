@@ -129,7 +129,7 @@ loader.load(
   "/assets/coin.glb",
   (gltf) => {
     coinModel = gltf.scene;
-    coinModel.scale.set(0.6, 0.6, 0.6);
+    coinModel.scale.set(0.2, 0.2, 0.2);
   },
   undefined,
   (error) => {
