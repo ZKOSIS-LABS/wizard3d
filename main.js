@@ -41,7 +41,7 @@ scene.add(ambientLight);
 // ----- Global Variables for Hover Detection and 2D Popup -----
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-const textObjects = []; // Stores the 3D title text meshes
+const textObjects = []; // Will store our interactive title containers
 
 let hoveredObject = null;
 let currentPopupTitle = "";
@@ -69,7 +69,7 @@ renderer.domElement.addEventListener(
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(textObjects);
       if (intersects.length > 0) {
-        hoveredObject = intersects[0].object;
+        hoveredObject = intersects[0].object.parent || intersects[0].object;
         const screenPos = getScreenPosition(hoveredObject, camera);
         showPopup(hoveredObject.name, screenPos);
       }
@@ -139,8 +139,9 @@ loader.load(
 // ----- Font and Title Text Loading -----
 const fontLoader = new FontLoader();
 fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
-  // Helper function to create 3D title text
+  // Helper function to create an interactive title with an invisible hit mesh.
   const createText = (text, color, position) => {
+    // Create the text geometry and mesh.
     const textGeometry = new TextGeometry(text, {
       font: font,
       size: 0.2,
@@ -149,18 +150,48 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     });
     const textMaterial = new THREE.MeshBasicMaterial({ color });
     const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-    textMesh.position.set(position.x, position.y, position.z);
-    textMesh.name = text;
-    scene.add(textMesh);
-    textObjects.push(textMesh);
-    return textMesh;
+
+    // Create a container to hold both the text and its hit mesh.
+    const container = new THREE.Object3D();
+    container.position.set(position.x, position.y, position.z);
+    container.name = text;
+    container.add(textMesh);
+
+    // Compute bounding box of the text geometry.
+    textGeometry.computeBoundingBox();
+    const bbox = textGeometry.boundingBox;
+    const sizeVec = new THREE.Vector3();
+    bbox.getSize(sizeVec);
+
+    // Expand hit area by a factor (e.g., 2x)
+    sizeVec.x *= 2;
+    sizeVec.y *= 2;
+    sizeVec.z *= 2;
+
+    // Create an invisible box geometry for the hit area.
+    const hitGeometry = new THREE.BoxGeometry(sizeVec.x, sizeVec.y, sizeVec.z);
+    const hitMaterial = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0,
+    });
+    const hitMesh = new THREE.Mesh(hitGeometry, hitMaterial);
+    // Center the hit mesh relative to the text.
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    hitMesh.position.copy(center);
+    container.add(hitMesh);
+
+    scene.add(container);
+    textObjects.push(container);
+    return container;
   };
 
   // Create the 4 titles.
   createText("CONTRACT", 0xffffff, { x: 1, y: -1, z: -2 });
   createText("CHART", 0xffffff, { x: 0, y: 1, z: -1.5 });
   createText("INFO", 0xffffff, { x: -2.5, y: 1, z: 1.5 });
-  createText("SOCIALS", 0xffffff, { x: 2.5, y: -1, z: 1.5 });
+  createText("SOCIALS", 0xffffff, { x: 2, y: -1, z: 1.5 });
 
   // ----- 2D Popup DOM Functions -----
   function getScreenPosition(object, camera) {
@@ -342,13 +373,14 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   // ----- Animation Loop -----
   function animate() {
     requestAnimationFrame(animate);
-    // Make the title texts face the camera.
-    textObjects.forEach((txt) => txt.lookAt(camera.position));
+    // Make the title containers face the camera.
+    textObjects.forEach((container) => container.lookAt(camera.position));
     controls.update();
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(textObjects);
     if (intersects.length > 0) {
-      const intersected = intersects[0].object;
+      // Use the container (parent) as the hovered object.
+      const intersected = intersects[0].object.parent || intersects[0].object;
       if (!hoveredObject || hoveredObject.name !== intersected.name) {
         hoveredObject = intersected;
         const screenPos = getScreenPosition(intersected, camera);
@@ -367,7 +399,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 });
 
 // ----- Coin & Fire Effect Functions -----
-// Spawn a single coin with a directional pouring effect.
 function spawnCoin() {
   if (!wizardModel || !coinModel) return;
   const coin = coinModel.clone();
@@ -377,19 +408,17 @@ function spawnCoin() {
     wandTip.getWorldPosition(tipPos);
   } else {
     wizardModel.getWorldPosition(tipPos);
-    tipPos.y += 1.0; // Fallback offset—adjust if necessary.
+    tipPos.y += 1.0;
   }
   coin.position.copy(tipPos);
   scene.add(coin);
 
-  // Calculate a directional vector using the wand tip's orientation.
-  let baseDir = new THREE.Vector3(2, 3, 2); // base direction (customize as needed)
+  let baseDir = new THREE.Vector3(2, 3, 2);
   if (wandTip) {
     const wandQuat = new THREE.Quaternion();
     wandTip.getWorldQuaternion(wandQuat);
     baseDir.applyQuaternion(wandQuat);
   }
-  // Add slight random variation for a natural look.
   baseDir.x += (Math.random() - 0.5) * 0.1;
   baseDir.z += (Math.random() - 0.5) * 0.1;
   baseDir.normalize();
@@ -436,7 +465,6 @@ function spawnFire() {
     .start();
 }
 
-// Pour coins by spawning several coins in rapid succession.
 function pourCoins(num, delay) {
   let count = 0;
   const interval = setInterval(() => {
@@ -446,13 +474,11 @@ function pourCoins(num, delay) {
   }, delay);
 }
 
-// Listen for clicks anywhere on the screen to trigger a pouring coin and fire effect.
 window.addEventListener("click", () => {
-  pourCoins(10, 100); // Spawn 10 coins with 100ms delay between each
+  pourCoins(10, 100);
   spawnFire();
 });
 
-// ----- Handle Window Resizing -----
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
