@@ -50,7 +50,12 @@ let popupDom = null;
 // Global variables for coin/fire effects:
 let wizardModel = null;
 let coinModel = null;
-let motoModel = null; // <-- NEW global for moto model
+let motoModel = null; // NEW global for moto model
+let motoAnimations = null; // NEW to store moto animations
+
+// Global array for mixers (for animated models)
+const mixers = [];
+const clock = new THREE.Clock();
 
 // Flag to indicate if the user has interacted (via mousemove or touch)
 let userInteracted = false;
@@ -148,12 +153,13 @@ loader.load(
   }
 );
 
-// ----- Load Moto Model for Effects -----
+// ----- Load Moto Model for Effects (with animation) -----
 loader.load(
-  "/assets/moto.glb",
+  "/assets/motoz.glb",
   (gltf) => {
     motoModel = gltf.scene;
     motoModel.scale.set(0.02, 0.02, 0.02);
+    motoAnimations = gltf.animations; // store animations for later use
   },
   undefined,
   (error) => {
@@ -169,7 +175,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     // Create the text geometry and mesh.
     const textGeometry = new TextGeometry(text, {
       font: font,
-      size: 0.15,
+      size: 0.2,
       height: 0.1,
       depth: 0.1,
     });
@@ -189,9 +195,9 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     bbox.getSize(sizeVec);
 
     // Expand hit area by a factor (e.g., 2x)
-    sizeVec.x *= 1.5;
-    sizeVec.y *= 1.5;
-    sizeVec.z *= 1.5;
+    sizeVec.x *= 2;
+    sizeVec.y *= 2;
+    sizeVec.z *= 2;
 
     // Create an invisible box geometry for the hit area.
     const hitGeometry = new THREE.BoxGeometry(sizeVec.x, sizeVec.y, sizeVec.z);
@@ -407,6 +413,10 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   // ----- Animation Loop -----
   function animate() {
     requestAnimationFrame(animate);
+    // Update animated mixers.
+    const delta = clock.getDelta();
+    mixers.forEach((mixer) => mixer.update(delta));
+
     // Make the title containers face the camera.
     textObjects.forEach((container) => container.lookAt(camera.position));
     controls.update();
@@ -479,6 +489,14 @@ function spawnCoin() {
 function spawnMoto() {
   if (!wizardModel || !motoModel) return;
   const moto = motoModel.clone();
+  // Create an AnimationMixer for the clone and play its first clip.
+  const mixer = new THREE.AnimationMixer(moto);
+  if (motoAnimations && motoAnimations.length > 0) {
+    const action = mixer.clipAction(motoAnimations[0]);
+    action.play();
+  }
+  mixers.push(mixer);
+
   let tipPos = new THREE.Vector3();
   const wandTip = wizardModel.getObjectByName("wandTip");
   if (wandTip) {
