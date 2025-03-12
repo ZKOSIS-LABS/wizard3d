@@ -441,7 +441,7 @@ function spawnCoin() {
   );
   scene.add(coin);
 
-  let baseDir = new THREE.Vector3(2, 3, 2);
+  let baseDir = new THREE.Vector3(12, 13, 2);
   if (wandTip) {
     const wandQuat = new THREE.Quaternion();
     wandTip.getWorldQuaternion(wandQuat);
