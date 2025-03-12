@@ -51,8 +51,12 @@ let popupDom = null;
 let wizardModel = null;
 let coinModel = null;
 
+// Flag to indicate if the user has interacted (via mousemove or touch)
+let userInteracted = false;
+
 // Update mouse vector for desktop using mousemove on the window
 window.addEventListener("mousemove", (event) => {
+  userInteracted = true;
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
@@ -61,17 +65,22 @@ window.addEventListener("mousemove", (event) => {
 renderer.domElement.addEventListener(
   "touchstart",
   (event) => {
+    userInteracted = true;
     if (event.touches.length > 0) {
       const touch = event.touches[0];
       mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-      // Trigger raycasting on touchstart
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(textObjects);
-      if (intersects.length > 0) {
-        hoveredObject = intersects[0].object.parent || intersects[0].object;
-        const screenPos = getScreenPosition(hoveredObject, camera);
-        showPopup(hoveredObject.name, screenPos);
+      // Only update raycasting if the user has interacted
+      if (userInteracted) {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(textObjects);
+        if (intersects.length > 0) {
+          const intersected =
+            intersects[0].object.parent || intersects[0].object;
+          hoveredObject = intersected;
+          const screenPos = getScreenPosition(intersected, camera);
+          showPopup(intersected.name, screenPos);
+        }
       }
     }
   },
@@ -81,6 +90,7 @@ renderer.domElement.addEventListener(
 renderer.domElement.addEventListener(
   "touchmove",
   (event) => {
+    userInteracted = true;
     if (event.touches.length > 0) {
       const touch = event.touches[0];
       mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
@@ -227,7 +237,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     }
     if (title === "CONTRACT") {
       div.innerHTML = `
-<p style="font-size:40px;">Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:25px;">Contract: 0x11111111111111111111111111111111</p>
       `;
     } else if (title === "INFO") {
       div.innerHTML = `
@@ -265,10 +275,10 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       // Fixed popup for SOCIALS: top right corner.
       div.innerHTML = `
 <a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
-  <img src="/tg.png" alt="Telegram" style="width:80px; height:auto;">
+  <img src="/tg.png" alt="Telegram" style="width:60px; height:auto;">
 </a>
 <a href="https://twitter.com" target="_blank">
-  <img src="/x.png" alt="Twitter" style="width:80px; height:auto;">
+  <img src="/x.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
       `;
     } else {
@@ -293,7 +303,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       if (title === "CONTRACT") {
         popupDom.classList.add("popup-socials");
         popupDom.innerHTML = `
-<p style="font-size:40px;">Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:25px;">Contract: 0x11111111111111111111111111111111</p>
         `;
       } else if (title === "INFO") {
         popupDom.classList.add("popup-info");
@@ -333,10 +343,10 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
         popupDom.classList.add("popup-socials-fixed");
         popupDom.innerHTML = `
 <a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
-  <img src="/tg.png" alt="Telegram" style="width:80px; height:auto;">
+  <img src="/tg.png" alt="Telegram" style="width:60px; height:auto;">
 </a>
 <a href="https://twitter.com" target="_blank">
-  <img src="/x.png" alt="Twitter" style="width:80px; height:auto;">
+  <img src="/x.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
         `;
       } else {
@@ -371,21 +381,32 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     popupDom.style.opacity = "1";
   }
 
+  // Set the default popup to INFO on load.
+  const infoTitle = textObjects.find((obj) => obj.name === "INFO");
+  if (infoTitle) {
+    const screenPos = getScreenPosition(infoTitle, camera);
+    hoveredObject = infoTitle;
+    currentPopupTitle = "INFO";
+    showPopup("INFO", screenPos);
+  }
+
   // ----- Animation Loop -----
   function animate() {
     requestAnimationFrame(animate);
     // Make the title containers face the camera.
     textObjects.forEach((container) => container.lookAt(camera.position));
     controls.update();
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(textObjects);
-    if (intersects.length > 0) {
-      // Use the container (parent) as the hovered object.
-      const intersected = intersects[0].object.parent || intersects[0].object;
-      if (!hoveredObject || hoveredObject.name !== intersected.name) {
-        hoveredObject = intersected;
-        const screenPos = getScreenPosition(intersected, camera);
-        showPopup(intersected.name, screenPos);
+    // Only update raycasting after user interaction.
+    if (userInteracted) {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(textObjects);
+      if (intersects.length > 0) {
+        const intersected = intersects[0].object.parent || intersects[0].object;
+        if (!hoveredObject || hoveredObject.name !== intersected.name) {
+          hoveredObject = intersected;
+          const screenPos = getScreenPosition(intersected, camera);
+          showPopup(intersected.name, screenPos);
+        }
       }
     }
     if (popupDom && hoveredObject && currentPopupTitle === "INFO") {
@@ -409,32 +430,28 @@ function spawnCoin() {
     wandTip.getWorldPosition(tipPos);
   } else {
     wizardModel.getWorldPosition(tipPos);
-    tipPos.y += 1.0; // Fallback offset—adjust if necessary.
+    tipPos.y += 1.0;
   }
   coin.position.copy(tipPos);
-
-  // Apply a random rotation to the coin.
+  // Apply a random rotation.
   coin.rotation.set(
     Math.random() * Math.PI * 2,
     Math.random() * Math.PI * 2,
     Math.random() * Math.PI * 2
   );
-
   scene.add(coin);
 
-  // Calculate a directional vector using the wand tip's orientation.
-  let baseDir = new THREE.Vector3(12, 13, 12); // base direction (customize as needed)
+  let baseDir = new THREE.Vector3(2, 3, 2);
   if (wandTip) {
     const wandQuat = new THREE.Quaternion();
     wandTip.getWorldQuaternion(wandQuat);
     baseDir.applyQuaternion(wandQuat);
   }
-  // Add slight random variation for a natural look.
   baseDir.x += (Math.random() - 0.5) * 0.1;
   baseDir.z += (Math.random() - 0.5) * 0.1;
   baseDir.normalize();
 
-  const distance = 5 + Math.random() * 0.5;
+  const distance = 3 + Math.random() * 0.5;
   const targetPos = tipPos.clone().add(baseDir.multiplyScalar(distance));
 
   new TWEEN.Tween(coin.position)
@@ -444,7 +461,6 @@ function spawnCoin() {
 
   setTimeout(() => scene.remove(coin), 1600);
 }
-
 
 function spawnFire() {
   if (!wizardModel) return;
@@ -487,7 +503,7 @@ function pourCoins(num, delay) {
 }
 
 window.addEventListener("click", () => {
-  pourCoins(7, 100);
+  pourCoins(10, 100);
   spawnFire();
 });
 
