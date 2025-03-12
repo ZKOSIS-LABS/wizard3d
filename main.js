@@ -50,6 +50,7 @@ let popupDom = null;
 // Global variables for coin/fire effects:
 let wizardModel = null;
 let coinModel = null;
+let motoModel = null; // <-- NEW global for moto model
 
 // Flag to indicate if the user has interacted (via mousemove or touch)
 let userInteracted = false;
@@ -144,6 +145,19 @@ loader.load(
   undefined,
   (error) => {
     console.error("Error loading coin model:", error);
+  }
+);
+
+// ----- Load Moto Model for Effects -----
+loader.load(
+  "/assets/moto.glb",
+  (gltf) => {
+    motoModel = gltf.scene;
+    motoModel.scale.set(0.02, 0.02, 0.02);
+  },
+  undefined,
+  (error) => {
+    console.error("Error loading moto model:", error);
   }
 );
 
@@ -420,7 +434,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   animate();
 });
 
-// ----- Coin & Fire Effect Functions -----
+// ----- Coin, Moto & Fire Effect Functions -----
 function spawnCoin() {
   if (!wizardModel || !coinModel) return;
   const coin = coinModel.clone();
@@ -462,6 +476,47 @@ function spawnCoin() {
   setTimeout(() => scene.remove(coin), 1600);
 }
 
+function spawnMoto() {
+  if (!wizardModel || !motoModel) return;
+  const moto = motoModel.clone();
+  let tipPos = new THREE.Vector3();
+  const wandTip = wizardModel.getObjectByName("wandTip");
+  if (wandTip) {
+    wandTip.getWorldPosition(tipPos);
+  } else {
+    wizardModel.getWorldPosition(tipPos);
+    tipPos.y += 1.0;
+  }
+  moto.position.copy(tipPos);
+  // Apply a random rotation.
+  moto.rotation.set(
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2
+  );
+  scene.add(moto);
+
+  let baseDir = new THREE.Vector3(12, 13, 2);
+  if (wandTip) {
+    const wandQuat = new THREE.Quaternion();
+    wandTip.getWorldQuaternion(wandQuat);
+    baseDir.applyQuaternion(wandQuat);
+  }
+  baseDir.x += (Math.random() - 0.5) * 0.1;
+  baseDir.z += (Math.random() - 0.5) * 0.1;
+  baseDir.normalize();
+
+  const distance = 6 + Math.random() * 0.5;
+  const targetPos = tipPos.clone().add(baseDir.multiplyScalar(distance));
+
+  new TWEEN.Tween(moto.position)
+    .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 1500)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  setTimeout(() => scene.remove(moto), 1600);
+}
+
 function spawnFire() {
   if (!wizardModel) return;
   const textureLoader = new THREE.TextureLoader();
@@ -493,17 +548,22 @@ function spawnFire() {
     .start();
 }
 
-function pourCoins(num, delay) {
+// New helper to randomly spawn either coin or moto:
+function pourEffects(num, delay) {
   let count = 0;
   const interval = setInterval(() => {
-    spawnCoin();
+    if (Math.random() < 0.5) {
+      spawnCoin();
+    } else {
+      spawnMoto();
+    }
     count++;
     if (count >= num) clearInterval(interval);
   }, delay);
 }
 
 window.addEventListener("click", () => {
-  pourCoins(10, 100);
+  pourEffects(10, 100); // randomly spawns coin or moto 10 times
   spawnFire();
 });
 
