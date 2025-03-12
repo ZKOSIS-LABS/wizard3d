@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import TWEEN from "@tweenjs/tween.js";
 
 // ----- Scene Setup -----
 const scene = new THREE.Scene();
@@ -40,11 +41,15 @@ scene.add(ambientLight);
 // ----- Global Variables for Hover Detection and 2D Popup -----
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-const textObjects = []; // Stores the 3D title meshes
+const textObjects = []; // Stores the 3D title text meshes
 
 let hoveredObject = null;
 let currentPopupTitle = "";
 let popupDom = null;
+
+// Global variables for coin/fire effects:
+let wizardModel = null;
+let coinModel = null;
 
 // Update mouse vector for desktop using mousemove on the window
 window.addEventListener("mousemove", (event) => {
@@ -53,49 +58,82 @@ window.addEventListener("mousemove", (event) => {
 });
 
 // For mobile: attach touch events to the canvas
-renderer.domElement.addEventListener("touchstart", (event) => {
-  if (event.touches.length > 0) {
-    const touch = event.touches[0];
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-    // Trigger raycasting on touchstart
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(textObjects);
-    if (intersects.length > 0) {
-      hoveredObject = intersects[0].object;
-      const screenPos = getScreenPosition(hoveredObject, camera);
-      showPopup(hoveredObject.name, screenPos);
+renderer.domElement.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.touches.length > 0) {
+      const touch = event.touches[0];
+      mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+      // Trigger raycasting on touchstart
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(textObjects);
+      if (intersects.length > 0) {
+        hoveredObject = intersects[0].object;
+        const screenPos = getScreenPosition(hoveredObject, camera);
+        showPopup(hoveredObject.name, screenPos);
+      }
     }
-  }
-}, false);
+  },
+  false
+);
 
-renderer.domElement.addEventListener("touchmove", (event) => {
-  if (event.touches.length > 0) {
-    const touch = event.touches[0];
-    mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
-  }
-}, false);
+renderer.domElement.addEventListener(
+  "touchmove",
+  (event) => {
+    if (event.touches.length > 0) {
+      const touch = event.touches[0];
+      mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    }
+  },
+  false
+);
 
-// ----- 3D Model Loading -----
+// ----- 3D Model Loading (Wizard) -----
 const loader = new GLTFLoader();
 loader.load(
   "/assets/wizo.glb",
   (gltf) => {
-    const model = gltf.scene;
-    scene.add(model);
-    const box = new THREE.Box3().setFromObject(model);
+    wizardModel = gltf.scene;
+    scene.add(wizardModel);
+    const box = new THREE.Box3().setFromObject(wizardModel);
     const size = box.getSize(new THREE.Vector3());
     const maxSize = Math.max(size.x, size.y, size.z);
     const scaleFactor = 4 / maxSize;
-    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    wizardModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
     const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center);
-    model.position.y -= 0.6;
-    console.log("Model Loaded and Resized!");
+    wizardModel.position.sub(center);
+    wizardModel.position.y -= 0.6;
+
+    // Check if the model has a wand tip. If not, add one.
+    let wandTip = wizardModel.getObjectByName("wandTip");
+    if (!wandTip) {
+      wandTip = new THREE.Object3D();
+      wandTip.name = "wandTip";
+      // Set the marker's local position relative to the wizard.
+      wandTip.position.set(3, 3.5, 0); // Adjust these values until it lines up with the wand tip.
+      wizardModel.add(wandTip);
+    }
+
+    console.log("Wizard model loaded and wand tip set!");
   },
   undefined,
-  (error) => { console.error("Error loading model:", error); }
+  (error) => {
+    console.error("Error loading model:", error);
+  }
+);
+
+// ----- Load Coin Model for Effects -----
+loader.load(
+  "/assets/coin.glb",
+  (gltf) => {
+    coinModel = gltf.scene;
+  },
+  undefined,
+  (error) => {
+    console.error("Error loading coin model:", error);
+  }
 );
 
 // ----- Font and Title Text Loading -----
@@ -124,8 +162,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   createText("INFO", 0xffffff, { x: -2.5, y: 1, z: 1.5 });
 
   // ----- 2D Popup DOM Functions -----
-
-  // Compute the 2D screen position from a 3D object (used for INFO popup)
   function getScreenPosition(object, camera) {
     const vector = new THREE.Vector3();
     object.getWorldPosition(vector);
@@ -135,7 +171,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     return { x, y };
   }
 
-  // Create a popup DOM element with content and assign style classes based on title
   function createPopupDom(title) {
     const div = document.createElement("div");
     div.id = "popupDom";
@@ -146,7 +181,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       opacity: "0",
       transition: "transform 0.5s ease-out, opacity 0.5s ease-out",
       zIndex: 1000,
-  
     });
     div.classList.add("popup");
     if (title === "CONTRACT") {
@@ -158,41 +192,39 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     }
     if (title === "CONTRACT") {
       div.innerHTML = `
-<p style="font-size:40px;" >Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:40px;">Contract: 0x11111111111111111111111111111111</p>
       `;
     } else if (title === "INFO") {
       div.innerHTML = `
-     
-        <p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
-    
+<p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
       `;
     } else if (title === "CHART") {
       div.innerHTML = `
-        <style>
-          #dexscreener-embed {
-            position: relative;
-            width: 100%;
-            min-height: 300px;
-            min-width: 300px;
-            padding-bottom: 125%;
-          }
-          @media(min-width: 1400px) {
-            #dexscreener-embed {
-              padding-bottom: 65%;
-            }
-          }
-          #dexscreener-embed iframe {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            border: 0;
-          }
-        </style>
-        <div id="dexscreener-embed">
-          <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
-        </div>
+<style>
+  #dexscreener-embed {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    min-width: 300px;
+    padding-bottom: 125%;
+  }
+  @media(min-width: 1400px) {
+    #dexscreener-embed {
+      padding-bottom: 65%;
+    }
+  }
+  #dexscreener-embed iframe {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border: 0;
+  }
+</style>
+<div id="dexscreener-embed">
+  <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
+</div>
       `;
     } else {
       div.innerHTML = `<p>Popup for ${title}</p>`;
@@ -200,7 +232,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     return div;
   }
 
-  // Show (or update) the popup DOM element with content and position it appropriately
   function showPopup(title, screenPos) {
     if (!popupDom) {
       popupDom = createPopupDom(title);
@@ -212,49 +243,47 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       if (title === "CONTRACT") {
         popupDom.classList.add("popup-socials");
         popupDom.innerHTML = `
-<p style="font-size:40px;" >Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:40px;">Contract: 0x11111111111111111111111111111111</p>
         `;
       } else if (title === "INFO") {
         popupDom.classList.add("popup-info");
         popupDom.innerHTML = `
-          
-        <p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
+<p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
         `;
       } else if (title === "CHART") {
         popupDom.classList.add("popup-chart");
         popupDom.innerHTML = `
-          <style>
-            #dexscreener-embed {
-              position: relative;
-              width: 100%;
-              min-height: 300px;
-              min-width: 300px;
-              padding-bottom: 125%;
-            }
-            @media(min-width: 1400px) {
-              #dexscreener-embed {
-                padding-bottom: 65%;
-              }
-            }
-            #dexscreener-embed iframe {
-              position: absolute;
-              width: 100%;
-              height: 100%;
-              top: 0;
-              left: 0;
-              border: 0;
-            }
-          </style>
-          <div id="dexscreener-embed">
-            <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
-          </div>
+<style>
+  #dexscreener-embed {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    min-width: 300px;
+    padding-bottom: 125%;
+  }
+  @media(min-width: 1400px) {
+    #dexscreener-embed {
+      padding-bottom: 65%;
+    }
+  }
+  #dexscreener-embed iframe {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border: 0;
+  }
+</style>
+<div id="dexscreener-embed">
+  <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
+</div>
         `;
       } else {
         popupDom.innerHTML = `<p>Popup for ${title}</p>`;
       }
       currentPopupTitle = title;
     }
-    // Set fixed positions for SOCIALS and CHART; for INFO, use dynamic positioning.
     if (title === "CHART") {
       popupDom.style.right = "20px";
       popupDom.style.bottom = "20px";
@@ -271,7 +300,6 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       popupDom.style.right = "";
       popupDom.style.bottom = "";
     }
-    // Trigger the pop-in animation
     popupDom.getBoundingClientRect();
     popupDom.style.transform = "scale(1)";
     popupDom.style.opacity = "1";
@@ -280,10 +308,9 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   // ----- Animation Loop -----
   function animate() {
     requestAnimationFrame(animate);
-    // biome-ignore lint/complexity/noForEach: <explanation>
+    // Make the title texts face the camera.
     textObjects.forEach((txt) => txt.lookAt(camera.position));
     controls.update();
-    // For desktop, use raycasting on mousemove
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(textObjects);
     if (intersects.length > 0) {
@@ -294,15 +321,102 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
         showPopup(intersected.name, screenPos);
       }
     }
-    // For INFO, update dynamic position continuously.
     if (popupDom && hoveredObject && currentPopupTitle === "INFO") {
       const screenPos = getScreenPosition(hoveredObject, camera);
       popupDom.style.left = `${screenPos.x}px`;
       popupDom.style.top = `${screenPos.y + 20}px`;
     }
+    TWEEN.update();
     renderer.render(scene, camera);
   }
   animate();
+});
+
+// ----- Coin & Fire Effect Functions -----
+// Spawn a single coin with a directional pouring effect.
+function spawnCoin() {
+  if (!wizardModel || !coinModel) return;
+  const coin = coinModel.clone();
+  let tipPos = new THREE.Vector3();
+  const wandTip = wizardModel.getObjectByName("wandTip");
+  if (wandTip) {
+    wandTip.getWorldPosition(tipPos);
+  } else {
+    wizardModel.getWorldPosition(tipPos);
+    tipPos.y += 1.0; // Fallback offset—adjust if necessary.
+  }
+  coin.position.copy(tipPos);
+  scene.add(coin);
+
+  // Calculate a directional vector using the wand tip's orientation.
+  let baseDir = new THREE.Vector3(2, 3, 2); // local upward
+  if (wandTip) {
+    const wandQuat = new THREE.Quaternion();
+    wandTip.getWorldQuaternion(wandQuat);
+    baseDir.applyQuaternion(wandQuat);
+  }
+  // Add slight random variation for a natural look.
+  baseDir.x += (Math.random() - 0.5) * 0.1;
+  baseDir.z += (Math.random() - 0.5) * 0.1;
+  baseDir.normalize();
+
+  const distance = 3 + Math.random() * 0.5;
+  const targetPos = tipPos.clone().add(baseDir.multiplyScalar(distance));
+
+  new TWEEN.Tween(coin.position)
+    .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 1500)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  setTimeout(() => scene.remove(coin), 1600);
+}
+
+function spawnFire() {
+  if (!wizardModel) return;
+  const textureLoader = new THREE.TextureLoader();
+  const fireTexture = textureLoader.load("/assets/fire.png");
+  const material = new THREE.SpriteMaterial({
+    map: fireTexture,
+    transparent: true,
+  });
+  const fireSprite = new THREE.Sprite(material);
+  let tipPos = new THREE.Vector3();
+  const wandTip = wizardModel.getObjectByName("wandTip");
+  if (wandTip) {
+    wandTip.getWorldPosition(tipPos);
+  } else {
+    wizardModel.getWorldPosition(tipPos);
+    tipPos.y += 1.0;
+  }
+  fireSprite.position.copy(tipPos);
+  fireSprite.scale.set(1, 1, 1);
+  scene.add(fireSprite);
+
+  new TWEEN.Tween(fireSprite.scale)
+    .to({ x: 3, y: 3, z: 3 }, 1000)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+  new TWEEN.Tween(fireSprite.material)
+    .to({ opacity: 0 }, 1000)
+    .onComplete(() => scene.remove(fireSprite))
+    .start();
+}
+
+
+// Pour coins by spawning several coins in rapid succession.
+function pourCoins(num, delay) {
+  let count = 0;
+  const interval = setInterval(() => {
+    spawnCoin();
+    count++;
+    if (count >= num) clearInterval(interval);
+  }, delay);
+}
+
+// Listen for clicks anywhere on the screen to trigger a pouring coin and fire effect.
+window.addEventListener("click", () => {
+  pourCoins(10, 100); // Spawn 10 coins with 100ms delay between each
+  spawnFire();
 });
 
 // ----- Handle Window Resizing -----
