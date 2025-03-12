@@ -169,7 +169,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     // Create the text geometry and mesh.
     const textGeometry = new TextGeometry(text, {
       font: font,
-      size: 0.2,
+      size: 0.15,
       height: 0.1,
       depth: 0.1,
     });
@@ -189,9 +189,9 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     bbox.getSize(sizeVec);
 
     // Expand hit area by a factor (e.g., 2x)
-    sizeVec.x *= 2;
-    sizeVec.y *= 2;
-    sizeVec.z *= 2;
+    sizeVec.x *= 1.5;
+    sizeVec.y *= 1.5;
+    sizeVec.z *= 1.5;
 
     // Create an invisible box geometry for the hit area.
     const hitGeometry = new THREE.BoxGeometry(sizeVec.x, sizeVec.y, sizeVec.z);
