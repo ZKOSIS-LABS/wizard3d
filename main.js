@@ -451,7 +451,7 @@ function spawnCoin() {
   baseDir.z += (Math.random() - 0.5) * 0.1;
   baseDir.normalize();
 
-  const distance = 3 + Math.random() * 0.5;
+  const distance = 6 + Math.random() * 0.5;
   const targetPos = tipPos.clone().add(baseDir.multiplyScalar(distance));
 
   new TWEEN.Tween(coin.position)
