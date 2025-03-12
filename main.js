@@ -175,7 +175,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     // Create the text geometry and mesh.
     const textGeometry = new TextGeometry(text, {
       font: font,
-      size: 0.2,
+      size: 0.13,
       height: 0.1,
       depth: 0.1,
     });
