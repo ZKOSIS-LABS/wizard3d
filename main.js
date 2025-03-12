@@ -129,6 +129,7 @@ loader.load(
   "/assets/coin.glb",
   (gltf) => {
     coinModel = gltf.scene;
+    coinModel.scale.set(0.6, 0.6, 0.6);
   },
   undefined,
   (error) => {
@@ -408,22 +409,32 @@ function spawnCoin() {
     wandTip.getWorldPosition(tipPos);
   } else {
     wizardModel.getWorldPosition(tipPos);
-    tipPos.y += 1.0;
+    tipPos.y += 1.0; // Fallback offset—adjust if necessary.
   }
   coin.position.copy(tipPos);
+
+  // Apply a random rotation to the coin.
+  coin.rotation.set(
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2
+  );
+
   scene.add(coin);
 
-  let baseDir = new THREE.Vector3(2, 3, 2);
+  // Calculate a directional vector using the wand tip's orientation.
+  let baseDir = new THREE.Vector3(12, 13, 12); // base direction (customize as needed)
   if (wandTip) {
     const wandQuat = new THREE.Quaternion();
     wandTip.getWorldQuaternion(wandQuat);
     baseDir.applyQuaternion(wandQuat);
   }
+  // Add slight random variation for a natural look.
   baseDir.x += (Math.random() - 0.5) * 0.1;
   baseDir.z += (Math.random() - 0.5) * 0.1;
   baseDir.normalize();
 
-  const distance = 3 + Math.random() * 0.5;
+  const distance = 5 + Math.random() * 0.5;
   const targetPos = tipPos.clone().add(baseDir.multiplyScalar(distance));
 
   new TWEEN.Tween(coin.position)
@@ -433,6 +444,7 @@ function spawnCoin() {
 
   setTimeout(() => scene.remove(coin), 1600);
 }
+
 
 function spawnFire() {
   if (!wizardModel) return;
