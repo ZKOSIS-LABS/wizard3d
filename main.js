@@ -241,7 +241,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       `;
     } else if (title === "INFO") {
       div.innerHTML = `
-<p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
+<p>Magic Internet Rewards enchants holders of $MIR with BTC, ETH, and SOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens to your wallet.</p>
       `;
     } else if (title === "CHART") {
       div.innerHTML = `
@@ -308,7 +308,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       } else if (title === "INFO") {
         popupDom.classList.add("popup-info");
         popupDom.innerHTML = `
-<p>Magic Internet Rewards enchants holders of $MIR with wBTC, wETH, and wSOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens.</p>
+<p>Magic Internet Rewards enchants holders of $MIR with BTC, ETH, and SOL. Our wizard has studied thousands of books over his many years and crafted a completely unique spell to deliver these tokens to your wallet.</p>
         `;
       } else if (title === "CHART") {
         popupDom.classList.add("popup-chart");
