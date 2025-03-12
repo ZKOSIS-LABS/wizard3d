@@ -156,10 +156,11 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     return textMesh;
   };
 
-  // Create the 3 titles
+  // Create the 4 titles.
   createText("CONTRACT", 0xffffff, { x: 1, y: -1, z: -2 });
   createText("CHART", 0xffffff, { x: 0, y: 1, z: -1.5 });
   createText("INFO", 0xffffff, { x: -2.5, y: 1, z: 1.5 });
+  createText("SOCIALS", 0xffffff, { x: 2.5, y: -1, z: 1.5 });
 
   // ----- 2D Popup DOM Functions -----
   function getScreenPosition(object, camera) {
@@ -189,6 +190,8 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       div.classList.add("popup-info");
     } else if (title === "CHART") {
       div.classList.add("popup-chart");
+    } else if (title === "SOCIALS") {
+      div.classList.add("popup-socials-fixed");
     }
     if (title === "CONTRACT") {
       div.innerHTML = `
@@ -226,6 +229,16 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
 </div>
       `;
+    } else if (title === "SOCIALS") {
+      // Fixed popup for SOCIALS: top right corner.
+      div.innerHTML = `
+<a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
+  <img src="/tg.png" alt="Telegram" style="width:80px; height:auto;">
+</a>
+<a href="https://twitter.com" target="_blank">
+  <img src="/x.png" alt="Twitter" style="width:80px; height:auto;">
+</a>
+      `;
     } else {
       div.innerHTML = `<p>Popup for ${title}</p>`;
     }
@@ -239,7 +252,12 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       currentPopupTitle = title;
     } else if (currentPopupTitle !== title) {
       popupDom.innerHTML = "";
-      popupDom.classList.remove("popup-socials", "popup-info", "popup-chart");
+      popupDom.classList.remove(
+        "popup-socials",
+        "popup-info",
+        "popup-chart",
+        "popup-socials-fixed"
+      );
       if (title === "CONTRACT") {
         popupDom.classList.add("popup-socials");
         popupDom.innerHTML = `
@@ -279,6 +297,16 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
 </div>
         `;
+      } else if (title === "SOCIALS") {
+        popupDom.classList.add("popup-socials-fixed");
+        popupDom.innerHTML = `
+<a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
+  <img src="/tg.png" alt="Telegram" style="width:80px; height:auto;">
+</a>
+<a href="https://twitter.com" target="_blank">
+  <img src="/x.png" alt="Twitter" style="width:80px; height:auto;">
+</a>
+        `;
       } else {
         popupDom.innerHTML = `<p>Popup for ${title}</p>`;
       }
@@ -294,6 +322,12 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       popupDom.style.bottom = "20px";
       popupDom.style.right = "";
       popupDom.style.top = "";
+    } else if (title === "SOCIALS") {
+      // Fixed at top right.
+      popupDom.style.top = "20px";
+      popupDom.style.right = "20px";
+      popupDom.style.left = "";
+      popupDom.style.bottom = "";
     } else {
       popupDom.style.left = `${screenPos.x}px`;
       popupDom.style.top = `${screenPos.y + 20}px`;
@@ -349,7 +383,7 @@ function spawnCoin() {
   scene.add(coin);
 
   // Calculate a directional vector using the wand tip's orientation.
-  let baseDir = new THREE.Vector3(2, 3, 2); // local upward
+  let baseDir = new THREE.Vector3(2, 3, 2); // base direction (customize as needed)
   if (wandTip) {
     const wandQuat = new THREE.Quaternion();
     wandTip.getWorldQuaternion(wandQuat);
@@ -401,7 +435,6 @@ function spawnFire() {
     .onComplete(() => scene.remove(fireSprite))
     .start();
 }
-
 
 // Pour coins by spawning several coins in rapid succession.
 function pourCoins(num, delay) {
