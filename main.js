@@ -487,7 +487,7 @@ function pourCoins(num, delay) {
 }
 
 window.addEventListener("click", () => {
-  pourCoins(10, 100);
+  pourCoins(7, 100);
   spawnFire();
 });
 
