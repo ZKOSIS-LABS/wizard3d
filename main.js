@@ -294,9 +294,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     } else if (title === "SOCIALS") {
       // Fixed popup for SOCIALS: top right corner.
       div.innerHTML = `
-<a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
-  <img src="/tg.png" alt="Telegram" style="width:60px; height:auto;">
-</a>
+
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
@@ -362,9 +360,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       } else if (title === "SOCIALS") {
         popupDom.classList.add("popup-socials-fixed");
         popupDom.innerHTML = `
-<a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
-  <img src="/tg.png" alt="Telegram" style="width:60px; height:auto;">
-</a>
+
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
