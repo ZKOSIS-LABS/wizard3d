@@ -297,7 +297,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 <a href="https://telegram.org" target="_blank" style="margin-right: 10px;">
   <img src="/tg.png" alt="Telegram" style="width:60px; height:auto;">
 </a>
-<a href="https://twitter.com" target="_blank">
+<a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
       `;
