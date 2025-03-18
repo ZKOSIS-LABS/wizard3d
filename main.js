@@ -298,7 +298,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
-<a href="https://t.me/" target="_blank">
+<a href="https://t.me/magicinternet_sol" target="_blank">
   <img src="/tg.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
       `;
@@ -367,7 +367,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
-<a href="https://t.me/" target="_blank">
+<a href="https://t.me/magicinternet_sol" target="_blank">
   <img src="/tg.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
         `;
