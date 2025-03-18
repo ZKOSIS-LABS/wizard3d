@@ -257,7 +257,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
     }
     if (title === "CONTRACT") {
       div.innerHTML = `
-<p style="font-size:25px;">Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:25px;">Contract: 7tXGPcSsWDgPHmLBS1EirBsPPitBktfCepp8KeGiJmrR</p>
       `;
     } else if (title === "INFO") {
       div.innerHTML = `
@@ -288,7 +288,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   }
 </style>
 <div id="dexscreener-embed">
-  <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
+  <iframe src="https://dexscreener.com/solana/5jbdejq8jn1b5tpb8bwnn5hziq1ibfddeh8lyjnvuswy?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
 </div>
       `;
     } else if (title === "SOCIALS") {
@@ -321,7 +321,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
       if (title === "CONTRACT") {
         popupDom.classList.add("popup-socials");
         popupDom.innerHTML = `
-<p style="font-size:25px;">Contract: 0x11111111111111111111111111111111</p>
+<p style="font-size:25px;">Contract: 7tXGPcSsWDgPHmLBS1EirBsPPitBktfCepp8KeGiJmrR</p>
         `;
       } else if (title === "INFO") {
         popupDom.classList.add("popup-info");
@@ -354,7 +354,7 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
   }
 </style>
 <div id="dexscreener-embed">
-  <iframe src="https://dexscreener.com/solana/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
+  <iframe src="https://dexscreener.com/solana/5jbdejq8jn1b5tpb8bwnn5hziq1ibfddeh8lyjnvuswy?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartDefaultOnMobile=1&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15"></iframe>
 </div>
         `;
       } else if (title === "SOCIALS") {
