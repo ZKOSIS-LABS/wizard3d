@@ -298,6 +298,9 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
+<a href="https://t,me/moneyinternet_sol" target="_blank">
+  <img src="/tg.png" alt="Twitter" style="width:60px; height:auto;">
+</a>
       `;
     } else {
       div.innerHTML = `<p>Popup for ${title}</p>`;
@@ -363,6 +366,9 @@ fontLoader.load("/assets/helvetiker_regular.typeface.json", (font) => {
 
 <a href="https://x.com/MagicIntRewards" target="_blank">
   <img src="/X.png" alt="Twitter" style="width:60px; height:auto;">
+</a>
+<a href="https://t,me/moneyinternet_sol" target="_blank">
+  <img src="/tg.png" alt="Twitter" style="width:60px; height:auto;">
 </a>
         `;
       } else {
